@@ -114,12 +114,10 @@ class CommandServer(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
     def take_photo(self, exposure_time):
-        self._camera.shutter_speed = int(exposure_time * 1_000_000)
-        self._camera.iso = 800
-        self._camera.focus = 0
-        self._camera.awb_mode = 'auto'
-        self._camera.exposure_mode = 'night'
-        self._camera.resolution = (1920, 1080)
+        self._camera.stop()
+        self._camera.set_controls({"ExposureTime": exposure_time, "AnalogueGain": 1.0, "AeEnable": False})
+        config = self._camera.create_still_configuration(main={"size":(1920,1080)})
+        self._camera.configure(config)
         self._camera.start()
 
         time.sleep(2)
@@ -138,4 +136,24 @@ if __name__ == '__main__':
 
 '''
 @reboot /usr/bin/python3 /home/darek/server.py
+from picamera2 import Picamera2
+import time
+
+camera = Picamera2()
+camera.set_controls({"ExposureTime": 120000, "AnalogueGain": 1.0, "AeEnable": False})
+config = camera.create_still_configuration(main={"size":(1920,1080)})
+camera.configure(config)
+camera.start()
+
+time.sleep(2)
+
+camera.capture_file("photo.jpg")
+
+libcamera-still -e png -o test.png -t 30000
+
+ test.png 
+
+scp darek@raspberrypi.local:/home/darek/test.png ./
+d
+libcamera-still -e png -o test.png --shutter 100000000 --gain 1 --awbgains 1,1 --immediate
 '''
